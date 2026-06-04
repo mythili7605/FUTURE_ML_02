@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Ticket Classifier - Client-Side NLP Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <!-- AI/ML Gear/Process SVG Icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+      </svg>
+      <h1>Support Ticket NLP Classifier</h1>
+    </div>
+    <div class="status-badge">
+      <div id="model-status-indicator" class="status-indicator"></div>
+      <span id="model-status-text">Model Untrained</span>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- Column 1: Simulator & Live Testing -->
+    <section class="panel-col">
+      
+      <!-- Simulator Glass Panel -->
+      <div class="glass-panel">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10H7v-2h10v2zm0-4H7V7h10v2zm0 8H7v-2h10v2z"/>
+          </svg>
+          Ticket Classifier Simulator
+        </h2>
+        
+        <div class="form-group">
+          <label for="ticket-input">Enter Support Ticket Text</label>
+          <textarea id="ticket-input" placeholder="Type customer support issue here... (e.g. 'Payment charged twice but my account is still basic')"></textarea>
+        </div>
+
+        <div class="flex justify-between align-center">
+          <button id="classify-btn" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            Classify Ticket
+          </button>
+          <button id="clear-input-btn" class="btn btn-secondary">Clear</button>
+        </div>
+
+        <!-- Predictor Output Results -->
+        <div id="prediction-results" class="prediction-box" style="display: none;">
+          <h3>Prediction Results</h3>
+          <div class="prediction-badges">
+            <div class="pred-badge">
+              <span class="pred-badge-label">Predicted Category</span>
+              <span id="pred-category" class="pred-badge-value">Account Issue</span>
+            </div>
+            <div class="pred-badge">
+              <span class="pred-badge-label">Assigned Priority</span>
+              <span id="pred-priority" class="pred-badge-value">High</span>
+            </div>
+          </div>
+
+          <!-- Category Confidence Distributions -->
+          <div class="mt-4">
+            <span class="pred-badge-label">Category Probabilities</span>
+            <div id="prob-chart" class="prob-chart-list">
+              <!-- Dynamically populated rows -->
+            </div>
+          </div>
+
+          <!-- Preprocessing visual steps -->
+          <div class="mt-4">
+            <span class="pred-badge-label">Natural Language Processing (NLP) Steps</span>
+            <div class="preproc-steps">
+              <div class="preproc-step">
+                <span>Raw Input:</span>
+                <p id="preproc-raw"></p>
+              </div>
+              <div class="preproc-step">
+                <span>Clean Text:</span>
+                <p id="preproc-clean"></p>
+              </div>
+              <div class="preproc-step">
+                <span>Keywords Match:</span>
+                <p id="preproc-keywords" style="font-style: italic;"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dataset Explorer Glass Panel -->
+      <div class="glass-panel">
+        <div class="flex justify-between align-center mb-4">
+          <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/>
+            </svg>
+            Dataset Explorer
+          </h2>
+          <button id="add-ticket-btn" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="margin-right: 4px;">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+            Add Ticket
+          </button>
+        </div>
+
+        <div class="dataset-actions">
+          <div class="search-box">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input type="text" id="search-input" placeholder="Search tickets...">
+          </div>
+          <select id="filter-category" class="filter-select">
+            <option value="">All Categories</option>
+            <option value="Technical Issue">Technical Issue</option>
+            <option value="Billing Issue">Billing Issue</option>
+            <option value="Account Issue">Account Issue</option>
+            <option value="Feature Request">Feature Request</option>
+            <option value="General Inquiry">General Inquiry</option>
+          </select>
+          <select id="filter-priority" class="filter-select">
+            <option value="">All Priorities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+
+        <div class="table-wrapper">
+          <table id="dataset-table">
+            <thead>
+              <tr>
+                <th style="width: 50%;">Ticket Text</th>
+                <th style="width: 25%;">Category</th>
+                <th style="width: 15%;">Priority</th>
+                <th style="width: 10%;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dataset-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dataset-footer">
+          <span id="dataset-count-label">Showing 0 of 0 tickets</span>
+          <button id="reset-dataset-btn" class="btn btn-danger" style="font-size: 0.75rem; padding: 6px 12px;">Reset Default Dataset</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Column 2: Model Training & Evaluation Metrics -->
+    <section class="panel-col">
+      
+      <!-- Model stats/training Glass Panel -->
+      <div class="glass-panel">
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.22 19.58 10.57 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+          </svg>
+          Model Training Control
+        </h2>
+        
+        <div class="train-controls">
+          <button id="train-model-btn" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>
+            </svg>
+            Train Machine Learning Model
+          </button>
+          
+          <div class="train-info">
+            <span id="train-split-label">Train/Test Split: 80% / 20%</span>
+            <small id="train-vocab-label">Vocabulary: 0 features</small>
+          </div>
+        </div>
+
+        <div class="model-info-block mt-4">
+          <p>This dashboard implements a **TfidfVectorizer** to transform support ticket text into numerical features, followed by a **Multinomial Naive Bayes** classifier to predict ticket category. All computation runs client-side in pure JavaScript.</p>
+        </div>
+
+        <!-- Visual Stats Cards -->
+        <div class="stats-grid mt-4">
+          <div class="stat-card">
+            <span id="stat-total-tickets" class="stat-val">0</span>
+            <span class="stat-label">Total Tickets</span>
+          </div>
+          <div class="stat-card">
+            <span id="stat-accuracy" class="stat-val accuracy-val">--</span>
+            <span class="stat-label">Test Accuracy</span>
+          </div>
+          <div class="stat-card">
+            <span id="stat-test-samples" class="stat-val">0</span>
+            <span class="stat-label">Test Size</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evaluation report & confusion matrix glass panel -->
+      <div id="evaluation-panel" class="glass-panel" style="display: none;">
+        <div class="metrics-section">
+          
+          <div>
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/>
+              </svg>
+              Classification Performance Report
+            </h2>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Precision</th>
+                    <th>Recall</th>
+                    <th>F1-Score</th>
+                    <th>Support</th>
+                  </tr>
+                </thead>
+                <tbody id="metrics-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h2>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              </svg>
+              Confusion Matrix (Test Set)
+            </h2>
+            <div class="matrix-container">
+              <div id="confusion-matrix-grid" class="matrix-grid">
+                <!-- Grid headings and cells populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Add Ticket Modal Window -->
+  <div id="ticket-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add Support Ticket to Dataset</h3>
+        <button id="close-modal-btn" class="close-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="form-group">
+        <label for="new-ticket-text">Ticket Text Content</label>
+        <textarea id="new-ticket-text" placeholder="Type support issue text here..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="new-ticket-category">Category (Ground Truth)</label>
+        <select id="new-ticket-category">
+          <option value="Technical Issue">Technical Issue</option>
+          <option value="Billing Issue">Billing Issue</option>
+          <option value="Account Issue">Account Issue</option>
+          <option value="Feature Request">Feature Request</option>
+          <option value="General Inquiry">General Inquiry</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="new-ticket-priority">Priority</label>
+        <select id="new-ticket-priority">
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancel-modal-btn" class="btn btn-secondary">Cancel</button>
+        <button id="save-ticket-btn" class="btn btn-primary">Save Ticket</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script dependencies -->
+  <script src="dataset.js"></script>
+  <script src="classifier.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
